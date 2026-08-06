@@ -1,0 +1,65 @@
+# Extract structured jobs from free text (Ollama)
+#
+# POST free-text job posts to an endpoint; llm-transform turns each into a
+# typed object (dropping posts that aren't job posts at all), llm-filter
+# keeps only remote roles, and the survivors are logged.
+#
+# Usage:
+#   ollama pull llama3.2
+#   psyduck init extract-jobs.psy
+#   psyduck run extract-jobs.psy
+#
+# Then from another terminal:
+#   curl -X POST http://localhost:8080/api/post \
+#     -d 'Acme Corp is hiring a senior Go engineer, fully remote (US timezones)'
+#
+
+produce "http-listen" "posts" {
+  address = ":8080"
+  path    = "/api/post"
+  method  = "POST"
+  status  = 200
+  reply   = "received"
+}
+
+transform "llm-transform" "extract" {
+  ollama = {
+    model = "llama3.2"
+  }
+  prompt    = "The message is a free-text job post. Extract the hiring company, the role title, and whether the role is fully remote."
+  threshold = 0.3 # drop messages that aren't job posts at all
+  schema    = <<-EOT
+    {
+      "type": "object",
+      "properties": {
+        "company": {"type": "string"},
+        "role":    {"type": "string"},
+        "remote":  {"type": "boolean"}
+      },
+      "required": ["company", "role", "remote"]
+    }
+  EOT
+}
+
+transform "llm-filter" "remote-only" {
+  ollama = {
+    model = "llama3.2"
+  }
+  accept = "json"
+  criteria = {
+    remote = { ask = "Is the job post for a fully remote role?", weight = 10 }
+  }
+  threshold = 10
+}
+
+transform "inspect" "log" {
+  prefix = "job"
+}
+
+consume "trash" "discard" {}
+
+pipeline "extract-jobs" {
+  produce   = [produce.http-listen.posts]
+  transform = [transform.llm-transform.extract, transform.llm-filter.remote-only, transform.inspect.log]
+  consume   = [consume.trash.discard]
+}

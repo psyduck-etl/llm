@@ -1,0 +1,5 @@
+# built plugin binary
+/llm
+# psyduck init cache + lock files
+.psyduck/
+*.lock
