@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/hashicorp/go-hclog v1.6.3
-	github.com/psyduck-etl/sdk v0.7.0
+	github.com/psyduck-etl/sdk v0.6.2
 )
 
 require (
