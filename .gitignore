@@ -3,3 +3,4 @@
 # psyduck init cache + lock files
 .psyduck/
 *.lock
+!flake.lock
