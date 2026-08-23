@@ -20,13 +20,11 @@
 
           src = self;
           vendorHash = "sha256-bo7qyfXuoCcrTyA1Jdi3dknd/c0spz3GSAj/Gx6IRYM=";
-
-          # Force a pure-Go build for a static, portable binary.
           env.CGO_ENABLED = 0;
 
           ldflags = [
-            "-s" # omit the symbol table
-            "-w" # omit DWARF debug info
+            "-s"
+            "-w"
           ];
 
           meta = {
